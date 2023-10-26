@@ -57,7 +57,7 @@ class PriceRecord:
         
         
         #Артикул для показа оставляем "как есть"
-        self.article_show = self.article
+        self.article_show = str(self.article)
         
         #Артикул для поиска оставляем только буквы и цифры
         self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
