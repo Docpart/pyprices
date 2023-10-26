@@ -56,11 +56,51 @@ class PriceRecord:
         #self.storage = ""
         
         
-        #Артикул для показа оставляем "как есть"
-        self.article_show = str(self.article)
         
+        
+        #ОБРАБОТКА АРТИКУЛА:
+        """
+        Варианты с артикулами.
+        1. Обычная строка с буквами и цифрами.
+        2. Строка, которая представляет число int или float, в том числе с ведущими нулями:
+        - если эта строка взята из Excel-файла, значение приходит float и имеет вид 123.0 (если изначально было 123)
+        - если в начале строки были ведущие нули, например 00123, то, необходимо их сохранить
+        """
+        #Запомнили исходное значение артикула
+        article_buf = self.article
+        try:
+            #Пробуем привести к float
+            float(article_buf)
+            
+            #Приводится. Значит содержит только цифры и максимум одну точку
+            if float(article_buf) == int( float(article_buf) ):
+                #После точки - 0
+                self.article = str( int( float(self.article) ) )
+            else:
+                #После точки НЕ 0
+                self.article = str( float(self.article) )
+            
+            self.article_show = self.article
+            self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
+            
+            #Если в исходном артикуле были ведущие нули, то, их нужно вернуть
+                for i in range(0, len(article_buf)):
+                    if article_buf[i] == '0':
+                        self.article = '0' + self.article
+                        self.article_show = '0' + self.article_show
+                    else:
+                        break
+            
+        except ValueError:
+            #Не приводится, значит - можно просто привести к строке
+            self.article_show = str(self.article)
+            self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
+        
+        
+        #Артикул для показа оставляем "как есть"
+        #self.article_show = self.article
         #Артикул для поиска оставляем только буквы и цифры
-        self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
+        #self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
         
         #Количество в наличии
         self.exist = re.sub('[^0-9,.]+', '', str(self.exist) ) #Оставили только цифры и точки-запятые
