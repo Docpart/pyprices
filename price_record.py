@@ -84,12 +84,12 @@ class PriceRecord:
             self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
             
             #Если в исходном артикуле были ведущие нули, то, их нужно вернуть
-                for i in range(0, len(article_buf)):
-                    if article_buf[i] == '0':
-                        self.article = '0' + self.article
-                        self.article_show = '0' + self.article_show
-                    else:
-                        break
+            for i in range(0, len(article_buf)):
+                if article_buf[i] == '0':
+                    self.article = '0' + self.article
+                    self.article_show = '0' + self.article_show
+                else:
+                    break
             
         except ValueError:
             #Не приводится, значит - можно просто привести к строке
