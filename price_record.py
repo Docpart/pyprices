@@ -91,7 +91,7 @@ class PriceRecord:
                 else:
                     break
             
-        except ValueError:
+        except Exception:
             #Не приводится, значит - можно просто привести к строке
             self.article_show = str(self.article)
             self.article = re.sub('[^a-zA-Z0-9а-яА-Я]+', '', str(self.article) )
