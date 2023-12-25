@@ -81,7 +81,7 @@ class item_to_handle:
         self.init_param("source", post_item)
         if self.source != None:
             if self.source != "local_path" and self.source != "email" and self.source != "ftp" and self.source != "url":
-                self.validation_messages.append('Значение source некорректно: ' + str(self.source) )
+                self.validation_messages.append('The source value is incorrect: ' + str(self.source) )
             else:
                 #Значение source допустимо. В зависимости от него проверяем далее параметры
                 if self.source == "local_path":
@@ -95,7 +95,7 @@ class item_to_handle:
                         self.init_param("tmp_folder_name", post_item)
                 elif self.source == "email":
                     if imap_status == False:
-                        self.validation_messages.append( 'Объект не может быть обработан по причине отсутствия подключения к почтовому IMAP-серверу' )
+                        self.validation_messages.append( 'The object cannot be processed due to lack of connection to the IMAP mail server' )
                     #Должны быть параметры для получения файла с почты
                     #Обязательный параметр - адрес отправителя
                     self.init_param("email_price_sender", post_item)
@@ -117,7 +117,7 @@ class item_to_handle:
                     #Обязательный параметр - url
                     self.init_param("url", post_item)
                 else:
-                    self.validation_messages.append('Что странное с параметром source')
+                    self.validation_messages.append('Something wrong with the parameter source')
         
         # ------------------
         
@@ -172,14 +172,14 @@ class item_to_handle:
         #Обязательный client_task_id (Глобальный ID задания)
         self.init_param("client_task_id", post_item, param_type="int")
         if not self.client_task_id > 0:
-            self.validation_messages.append('client_task_id имеет некорректное значение ' + str(client_task_id) )
+            self.validation_messages.append('client_task_id has an incorrect value ' + str(client_task_id) )
         else:
             #Значение технически корректное - ищем такое задание в таблице начатых заданий
             cursor = db_link.cursor()
             cursor.execute("SELECT COUNT(*) FROM `shop_docpart_pyprices_tasks` WHERE `id` = %s AND `price_id` = %s AND (`pyprices_launche_id` = %s OR ISNULL(`pyprices_launche_id`) )", (self.client_task_id, self.price_id, 0) )
             count_tasks_record = cursor.fetchone()
             if int(count_tasks_record[0]) != int(1):
-                self.validation_messages.append('Задание с client_task_id ' + str(self.client_task_id) + ' не найдено' )
+                self.validation_messages.append('Task with client_task_id ' + str(self.client_task_id) + ' not found' )
         
         # ------------------
         
@@ -201,7 +201,7 @@ class item_to_handle:
         if param_name not in post_item:
             #Если такой параметр обязателен, то, добавляем сообщение (объект считается не валидным)
             if required:
-                self.validation_messages.append('В объекте не найден параметр ' + str(param_name) )
+                self.validation_messages.append('Parameter not found in object: ' + str(param_name) )
             
             return
         else:
@@ -227,7 +227,7 @@ class item_to_handle:
                 if not param_value.isdigit():
                     #И при этом, параметр обязательный
                     if required:
-                        self.validation_messages.append('Обязательный параметр ' + param_name + ' имеет некорректное значение ' + str(param_value)  )
+                        self.validation_messages.append('Required parameter ' + param_name + ' has an incorrect value ' + str(param_value)  )
                     
                     return
                 else:

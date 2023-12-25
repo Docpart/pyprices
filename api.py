@@ -59,7 +59,7 @@ def get_config_php_param(param):
             return config_php_content
         
     except Exception:
-        exit_pyprices(False, "Не удается прочитать конфиг платформы")
+        exit_pyprices(False, "Could not read CMS config")
 
 # --------------------------------------------------------------
 
@@ -122,7 +122,7 @@ def init_list_to_handle(post_data):
     try:
         list_to_handle_loaded = json.loads(post_data['list_to_handle'].value)
     except json.decoder.JSONDecodeError:
-        exit_pyprices(False, "Не удалось распарсить list_to_handle из полученной строки в Python-переменную")
+        exit_pyprices(False, "Failed to parse list_to_handle from the received string into a Python variable")
     
     
     #Распарсили строку list_to_handle в Python-переменную. Теперь создаем объекты item_to_handle и добавляем их в массив заданий. Цикл по распарсенному массиву. task на итерации цикла - это еще не проверенный объект
@@ -145,7 +145,7 @@ def init_list_to_handle(post_data):
             prices_id_appended.append(item.price_id)
         else:
             if item.validated:
-                item.validation_messages.append('Объект не будет обработан, поскольку в списке list_to_handle уже есть объект с таким же price_id, добавленный на обработку')
+                item.validation_messages.append('The object will not be processed because the list_to_handle already has an object with the same price_id already added for processing')
             list_to_handle_incorrect.append(item)
         
 # --------------------------------------------------------------
@@ -199,7 +199,7 @@ except mysql.connector.Error as err:
 
 #Если это был просто запрос на тестирование подключения к БД - выходим
 if "just_test_db" in post_data:
-    exit_pyprices(True, 'Подключение к БД доступно')
+    exit_pyprices(True, 'Database connection available')
 
 # --------------------------------------------------------------
 
@@ -221,7 +221,7 @@ try:
     #Получаем ID запуска
     launch_id = cursor.lastrowid
     if not launch_id:
-        raise Exception('Не определен launch_id')
+        raise Exception('launch_id not defined')
     
 except Exception as err:
     exit_pyprices(False, str(err))
@@ -243,7 +243,7 @@ imap_status = imap_client.get_imap_status()
 init_list_to_handle(post_data)
 
 if len(list_to_handle) == 0:
-    exit_pyprices(False, "Нет ни одного корректного задания на обработку")
+    exit_pyprices(False, "There are no any correct tasks to handle")
 
 # --------------------------------------------------------------
 
@@ -256,7 +256,7 @@ if not os.path.isdir('tmp'):
     
 #Если tmp не оказалось
 if not os.path.isdir('tmp'):
-    exit_pyprices(False, "Папки tmp не было, и не получилось ее создать. Проверьте настройки прав в модуле загрузки прайс-листов")
+    exit_pyprices(False, "There was no tmp folder, and it was not possible to create it. Check the rights settings in the price list module")
 
 #На всякий случай проверяем наличие папки tmp/<launch_id>
 if os.path.isdir('tmp/' + str(launch_id) ):
@@ -268,7 +268,7 @@ os.mkdir('tmp/' + str(launch_id) )
 
 #В итоге проверяем наличие рабочей папки для текущего запуска
 if not os.path.isdir('tmp/' + str(launch_id) ):
-    exit_pyprices(False, 'Не удалось создать папку tmp/launch_id ('+ str(launch_id) +')')
+    exit_pyprices(False, 'Failed to create folder tmp/launch_id ('+ str(launch_id) +')')
 
 # --------------------------------------------------------------
 
@@ -304,7 +304,7 @@ for task in list_to_handle:
             try:
                 receiver.get_file()
             except Exception as err:
-                task.error_messages.append( "При попытке получить файл по URL произошла ошибка: " + str(err) )
+                task.error_messages.append( "An error occurred while trying to get a file from a URL: " + str(err) )
             
     if task.source == "email":
         #Если способ получения файла - email, то добавляем этот объект задания в сгруппированный массив
@@ -327,7 +327,7 @@ if len(list_to_handle_email) > 0:
             try:
                 receiver.get_files_for_tasks() #Другой метод, не get_file()
             except Exception as err:
-                errors_general_list.append( "При получении файлов с E-mail от " + str(email_price_sender) + " произошла ошибка: " + str(err) )
+                errors_general_list.append( "When receiving files from E-mail from " + str(email_price_sender) + " an error has occurred: " + str(err) )
                 #task.error_messages.append( "При попытке получить файл по URL произошла ошибка: " + str(err) )
 
 # --------------------------------------------------------------
@@ -344,7 +344,7 @@ for task in list_to_handle:
     
     #Если список файлов для данного задания пуст
     if len(files_list) == 0:
-        task.error_messages.append('После всех обработок список файлов для данного задания пуст. Ничего не делаем')
+        task.error_messages.append('After all processing, the list of files for this task is empty. We do not do anything')
         continue
     
     
@@ -396,7 +396,7 @@ for task in list_to_handle:
             db_link.rollback()
             task.records_handled = 0
             task.last_updated = 0
-            task.error_messages.append('Возникла ошибка в блоке коммита транзакции. Изменения в базу данных не записаны')
+            task.error_messages.append('An error occurred in the transaction commit block. Changes are not written to the database')
     else:
         #Для данного price_id не загружено (не обработано) ни одной строки - откатываем транзакцию
         db_link.rollback()
@@ -404,4 +404,4 @@ for task in list_to_handle:
 
 # --------------------------------------------------------------
 #Модуль отработал корректно
-exit_pyprices(True, 'Модуль отработал корректно')
+exit_pyprices(True, 'The module worked correctly')

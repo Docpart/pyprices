@@ -10,6 +10,8 @@ import price_record #Класс товарной позиции
 from pathlib import Path
 
 import csv
+import sys
+csv.field_size_limit(sys.maxsize)
 
 """
 Для работы с Excel-файлами
@@ -85,7 +87,7 @@ class PriceFileHandler:
         for file in self.buffer_files:
             if not file.closed:
                 file.close()
-                print('Успешно закрыли буферный файл')
+                #print('Успешно закрыли буферный файл')
         
     
     # --------------------------------------------------------------
@@ -99,7 +101,7 @@ class PriceFileHandler:
             os.mkdir( 'tmp/' + str(self.launch_id) + '/buffer_files' )
             if not os.path.isdir( 'tmp/' + str(self.launch_id) + '/buffer_files' ):
                 #Не создали
-                raise Exception('Не смогли создать директорию tmp/launch_id('+ str(self.launch_id) +')/buffer_files' )
+                raise Exception('Could not create directory tmp/launch_id('+ str(self.launch_id) +')/buffer_files' )
                 return
     
     
@@ -133,18 +135,18 @@ class PriceFileHandler:
                 
                 #Если функция handle_openpyxl_file() не вызвала исключение, то, проверяем количество обработанных строк. Если оно равно 0, то, сами генерируем исключение и ниже попробуем обработать этот файл через другую функцию
                 if self.file_records_handled == 0:
-                    raise Exception('Не удалось прочитать файл')
+                    raise Exception('Failed to read file')
                 
             except KeyError as err:
                 
                 #Если возникло исключение KeyError, то, пробуем обработать этот же файл через универсальную библиотеку. Внимание! Именно под такое исключение ставится библиотека именно версии xlrd==1.2.0
-                self.task.other_messages.append('При обработке черех xlsx возникла ошибка: ' + str(err) + ', пробуем теперь через xlrd')
+                self.task.other_messages.append('An error occurred while processing via xlsx: ' + str(err) + ', trying via xlrd')
                 self.handle_xlrd_file()
                 
             except Exception as err:
                 
                 #Если возникло еще какое-то исключение. Тоже пробуем обработать через туже функцию
-                self.task.other_messages.append('При обработке черех xlsx возникла ошибка: ' + str(err) + ', пробуем теперь через xlrd')
+                self.task.other_messages.append('An error occurred while processing via xlsx: ' + str(err) + ', trying via xlrd')
                 self.handle_xlrd_file()
                 
         elif file_extension in self.xlrd_files_extensions:
@@ -159,7 +161,7 @@ class PriceFileHandler:
                 
                 #ПРЕДПОЛАГАЕМ, что это на самом деле CSV
                 #Если возникло такое исключение - это, как обычно, от кривого поставщика - кривой Excel-файл, не соответствующий структуре xls. Обрабатываем его соответствующим образом
-                self.task.other_messages.append("Файл " + str(self.filename) + " имеет некоррктную структуру. Возможно он не является XLS. Переименовываем его в CSV и пробуем обработать как CSV.")
+                self.task.other_messages.append("File " + str(self.filename) + " has an incorrect structure. It may not be XLS. Trying to rename it to CSV and trying to process it as CSV.")
                 
                 
                 #Переименовываем файл xls в csv путем добавления расширения в конец имени файла (<filename>.xls.csv). При этом проверяем наличие такого файла (предотвращаем колизии)
@@ -177,7 +179,7 @@ class PriceFileHandler:
                 self.handle_text_file()
                 
         else:
-            raise Exception( 'Файл имеет неподдерживаемый формат - ' + str(file_extension) )
+            raise Exception( 'The file has unsupported type ' + str(file_extension) )
             return
     
     # --------------------------------------------------------------
@@ -203,18 +205,18 @@ class PriceFileHandler:
     
     #Метод обработки CSV и TXT
     def handle_text_file(self):
-        self.task.other_messages.append("Читаем через CSV-функцию")
+        self.task.other_messages.append("Reading via CSV function")
         
-        self.task.other_messages.append("Используем режим автоопределения разделителя")
+        self.task.other_messages.append("Using auto-detect separator mode")
         
         self.task.cols_delimiter = self.text_delimiters[self.text_delimiter_index]
         
         #Индикация разделителя
         cols_delimiter_to_show = self.task.cols_delimiter
         if cols_delimiter_to_show == '\t':
-            cols_delimiter_to_show = 'Табуляция'
+            cols_delimiter_to_show = 'Tabulation'
         
-        self.task.other_messages.append("Разделитель: " + str(cols_delimiter_to_show) )
+        self.task.other_messages.append("Separator: " + str(cols_delimiter_to_show) )
 
         #Механизм автоопределения некорректности файла. Нужен, если будем переименовывать xls/xlsx файл в csv и читать, как csv, либо, если выбран неподходящий разделитель. Если этот файл не является текстовым, то, несколько строк подряд при разделении по cols_delimiter не будут иметь достаточное количество колонок. Считаем, что необходимо 3 колонки или больше.
         less_3_cols_counter = 0 #Счетчик количества строк подряд, в которых менее 3 колонок
@@ -227,7 +229,7 @@ class PriceFileHandler:
         if self.task.file_encoding == 'auto':
             file_encoding = self.detect_encoding()
             if type(file_encoding) is not str:
-                self.task.other_messages.append("Не удалось определить кодировку автоматически, используем кодировку по-умолчанию - ANSI. Рекомендуется задайть кодировку явно в настройках прайс-листа")
+                self.task.other_messages.append("It was not possible to detect the encoding automatically. Using the default encoding ANSI. It is recommended to set the encoding explicitly in the price list settings")
                 file_encoding = 'cp1251'
         else:
             #Берем явное значение от пользователя
@@ -236,9 +238,9 @@ class PriceFileHandler:
         
         #Открываем файл прайс-листа на чтение
         with open('tmp/' + str(self.launch_id) + '/' + str(self.task.price_id) + '/' + self.filename , 'r', encoding=file_encoding, errors="ignore") as handled_file:
-            self.task.other_messages.append("Открыли файл прайс-листа на чтение" )
+            self.task.other_messages.append("Opened the price list file for reading" )
             reader = csv.reader(handled_file, delimiter=self.task.cols_delimiter)
-            self.task.other_messages.append("Передали файл в библиотеку CSV" )
+            self.task.other_messages.append("Got the file to the CSV library" )
             
             i = 0 #Счетчик прочитанных строк
             #Начинаем построчно читать файл прайс-листа
@@ -264,13 +266,13 @@ class PriceFileHandler:
                             #ПЕРЕИнициализация режима импорта (чтобы отбросить текущий подготавливаемый запрос к БД)
                             self.init_import_mode()
 
-                            self.task.other_messages.append("Текущий разделитель не подошел. Пробуем другой. Рекурсивный вызов" )
+                            self.task.other_messages.append("The current separator did not fit. Trying another one. Recursive call" )
                             
                             #Рекурсивный вызов
                             self.handle_text_file()
                             return
                         else:
-                            raise Exception('Данный файл не является текстовым (CSV или TXT) по причине того, что в нем встретилось подряд некорректных строк в количестве ' + str(less_3_cols_counter) + '. Ни один из возможных разделителей не подошел' )
+                            raise Exception('This file is not a text file (CSV or TXT) due to the fact that it contains a number of incorrect lines in a row: ' + str(less_3_cols_counter) + '. None of the possible separators worked' )
                     else:
                         #Переходим к следующей строке
                         continue
@@ -387,7 +389,7 @@ class PriceFileHandler:
     
     #Метод обработки файла через библиотеку openpyxl (для актуального Excel - XLSX)
     def handle_openpyxl_file(self):
-        self.task.other_messages.append('Обработка через XLSX функцию. Файл с именем: ' + self.filename)
+        self.task.other_messages.append('Processing via XLSX function. File named: ' + self.filename)
         #print("Обработка через XLSX функцию<br>")
         
         #Есть особенность перебора ячеек в XLSX файле - цикл по строкам и затем цикл по колонкам в строке. Для оптимизации скорости, сначала готовим массив соответствия имен колонок в классе товарной позиции и номеров колонок из объекта задания
@@ -454,7 +456,7 @@ class PriceFileHandler:
     def handle_xlrd_file(self):
         #print("Обработка через XLS (старый Excel) функцию<br>")
         
-        self.task.other_messages.append('Обработка через XLS (старый Excel) функцию. Файл с именем: ' + self.filename)
+        self.task.other_messages.append('Processing via XLS (old Excel) function. File named: ' + self.filename)
         
         #Есть особенность перебора ячеек в XLS файле - цикл по строкам и затем цикл по колонкам в строке. Для оптимизации скорости, сначала готовим массив соответствия имен колонок в классе товарной позиции и номеров колонок из объекта задания
         cols_dict = {} # Словарь в формате col_number (номер колонки в задании):col_name (имя колонки)
@@ -490,7 +492,15 @@ class PriceFileHandler:
                 for cx in range(sheet.ncols):
                     #Если в настройках задания указана колонка с таким номером, указываем ее значение в соответствующий элемент словаря
                     if cx+1 in cols_dict:
-                        price_record_dict[ str(cols_dict[cx+1]) ] = str( sheet.cell_value(rowx=rx, colx=cx) )
+                        
+                        value = str( sheet.cell_value(rowx=rx, colx=cx) )
+                        
+                        #Проблема, описанная здесь: https://stackoverflow.com/questions/4928629/xlrd-excel-script-converting-n-a-to-42
+                        textType = sheet.cell(rx,cx).ctype #Get the type of the cell
+                        if textType == 5:
+                            value = None
+                    
+                        price_record_dict[ str(cols_dict[cx+1]) ] = value
                 
                 
                 #Затем объект PriceRecord внутри себя сделает приведение значений всех полей к корректному техническому виду

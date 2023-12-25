@@ -70,11 +70,11 @@ class file_receiver:
             os.mkdir( 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) )
             if not os.path.isdir( 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) ):
                 #Не создалин
-                raise Exception('Не смогли создать директорию ' + 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) )
+                raise Exception('Could not create directory ' + 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) )
                 return
         else:
             #Директория уже была до вызова метода. Такого быть не должно
-            raise Exception('Директория ' + 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + ' уже была до вызова метода. Такого быть не должно' )
+            raise Exception('Directory ' + 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + ' already existed before the method was called. This should not happen' )
             return
     
     # --------------------------------------------------------------
@@ -164,7 +164,7 @@ class file_receiver:
                 try:
                     rar_ref.extractall( arch_dir )
                 except Exception as err:
-                    raise Exception( "Архив " + str(err) )
+                    raise Exception( "Archive " + str(err) )
                     #Здесь можем записать лог - не распаковался архив
             
         elif file_extension == 'tar':
@@ -178,7 +178,7 @@ class file_receiver:
             py7zr.unpack_7zarchive(arch_file_path, arch_dir)
             
         else:
-            raise Exception('Архив с расширением ' + file_extension + ' не может быть распакован')
+            raise Exception('Archive with extension ' + file_extension + ' cannot be extracted')
             return
         
         #Здесь нужно будет удалить архив
@@ -214,7 +214,7 @@ class file_receiver_local_path(file_receiver):
             
             #Значения должны совпасть (то, что получили из self.item.local_path и то, что получили от пользователя в объекте задания)
             if tmp_folder_name != self.item.tmp_folder_name:
-                raise Exception("Ошибка проверки уникального имени временной папки перед ее удалением. Удаление не выполнено.")
+                raise Exception("Error checking the unique name of a temporary folder before deleting it. Deletion was not executed.")
                 return
             
             #Проверяем наличие самой папки
@@ -237,7 +237,7 @@ class file_receiver_local_path(file_receiver):
         
         #Проверяем наличие файла
         if not os.path.isfile(self.item.local_path):
-            raise Exception('Указанный в local_path файл не найден')
+            raise Exception('The file specified in local_path was not found')
             return
         
         
@@ -249,7 +249,7 @@ class file_receiver_local_path(file_receiver):
         #Проверяем тип файла
         file_extension = self.get_file_extension(filename)
         if file_extension not in set( self.extensions_suitable_arch ) and file_extension not in set( self.extensions_suitable ):
-            raise Exception( 'Указанный в local_path файл имеет не подходящий формат - ' + file_extension )
+            raise Exception( 'The file specified in local_path has incorrect format: ' + file_extension )
             return
         
         
@@ -259,7 +259,7 @@ class file_receiver_local_path(file_receiver):
             if not self.is_file_suitable_by_substring(filename):
                 #Удаляем исходный файл
                 self.del_file()
-                raise Exception( 'Файл не подошел по имени' )
+                raise Exception( 'The file name did not match' )
                 return
             else:
                 #Файл подошел - копируем его в папку для последующей обработки
@@ -272,7 +272,7 @@ class file_receiver_local_path(file_receiver):
             if not self.is_file_suitable_by_substring_arch(filename):
                 #Удаляем исходный файл
                 self.del_file()
-                raise Exception( 'Файл не подошел по имени' )
+                raise Exception( 'The file name did not match' )
                 return
             else:
                 #Файл подошел по имени - копируем его в папку, распаковываем и проверяем дальше
@@ -296,7 +296,7 @@ class file_receiver_local_path(file_receiver):
                     file_extension_unp = self.get_file_extension(file_name_in_arch)
                     if file_extension_unp not in set( self.extensions_suitable ):
                         #Добавляем сообщение в объект задания
-                        self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" имеет не подходящий тип. Допустимы типы файлов: ' + ', '.join(self.extensions_suitable) )
+                        self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] has wrong type. Accepted file types: ' + ', '.join(self.extensions_suitable) )
                         #Удаляем неподходящий файл
                         self.del_file_from_tmp(file_name_in_arch)
                         #Переходим к следующему файлу
@@ -306,7 +306,7 @@ class file_receiver_local_path(file_receiver):
                     #Проверяем, подходит ли по фильтру имени файла
                     if not self.is_file_suitable_by_substring(file_name_in_arch):
                         #Добавляем сообщение в объект задания
-                        self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" не подходит по подстроке в имени файла: ' + str(self.item.file_name_substring) )
+                        self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] does not match the substring in the file name: ' + str(self.item.file_name_substring) )
                         #Удаляем неподходящий файл
                         self.del_file_from_tmp(file_name_in_arch)
                         #Переходим к следующему файлу
@@ -314,7 +314,7 @@ class file_receiver_local_path(file_receiver):
                     
                     
                     #Файл прошел проверки и остается в tmp/launch_id/<price_id> для последующего импорта. Добавляем сообщение в объект задания
-                    self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" УСПЕШНО прошел проверки и остается для последующей обработки' )
+                    self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] has SUCCESSFULLY passed the checks and remains for further processing' )
     
     
     # --------------------------------------------------------------
@@ -346,7 +346,7 @@ class file_receiver_url(file_receiver):
         #Проверяем тип файла
         file_extension = self.get_file_extension(filename)
         if file_extension not in set( self.extensions_suitable_arch ) and file_extension not in set( self.extensions_suitable ):
-            raise Exception( 'Указанный в URL файл имеет не подходящий формат - ' + file_extension )
+            raise Exception( 'The file specified in the URL has incorrect format: ' + file_extension )
             return
         
         
@@ -375,7 +375,7 @@ class file_receiver_url(file_receiver):
             if file_extension in set( self.extensions_suitable ):
                 #Проверяем, подходит ли по фильтру имени файла
                 if not self.is_file_suitable_by_substring(filename):
-                    raise Exception( 'Файл не подошел по имени: ' + filename )
+                    raise Exception( 'The file name did not match: ' + filename )
                     return
                 else:
                     #Файл подошел - копируем его в папку для последующей обработки
@@ -387,7 +387,7 @@ class file_receiver_url(file_receiver):
                 #Файл является архивом.
                 #Проверяем, подходит ли он по имени
                 if not self.is_file_suitable_by_substring_arch(filename):
-                    raise Exception( 'Файл не подошел по имени: ' + filename )
+                    raise Exception( 'The file name did not match: ' + filename )
                     return
                 else:
                     #Файл подошел по имени - копируем его в папку, распаковываем и проверяем дальше
@@ -396,7 +396,7 @@ class file_receiver_url(file_receiver):
                     
                     #Проверяем наличие файла после его скачивания
                     if not Path('tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + '/' + filename).is_file():
-                        raise Exception('Не удалось скачать файл')
+                        raise Exception('Failed to download file')
                         return
                     
                     #Распаковываем архив (распаковка архива, удаление архива после распаковки)
@@ -415,7 +415,7 @@ class file_receiver_url(file_receiver):
                         file_extension_unp = self.get_file_extension(file_name_in_arch)
                         if file_extension_unp not in set( self.extensions_suitable ):
                             #Добавляем сообщение в объект задания
-                            self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" имеет не подходящий тип. Допустимы типы файлов: ' + ', '.join(self.extensions_suitable) )
+                            self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] has wrong type. Accepted file types: ' + ', '.join(self.extensions_suitable) )
                             #Удаляем неподходящий файл
                             self.del_file_from_tmp(file_name_in_arch)
                             #Переходим к следующему файлу
@@ -425,7 +425,7 @@ class file_receiver_url(file_receiver):
                         #Проверяем, подходит ли по фильтру имени файла
                         if not self.is_file_suitable_by_substring(file_name_in_arch):
                             #Добавляем сообщение в объект задания
-                            self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" не подходит по подстроке в имени файла: ' + str(self.item.file_name_substring) )
+                            self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] does not match the substring in the file name: ' + str(self.item.file_name_substring) )
                             #Удаляем неподходящий файл
                             self.del_file_from_tmp(file_name_in_arch)
                             #Переходим к следующему файлу
@@ -433,7 +433,7 @@ class file_receiver_url(file_receiver):
                         
                         
                         #Файл прошел проверки и остается в tmp/launch_id/<price_id> для последующего импорта. Добавляем сообщение в объект задания
-                        self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" УСПЕШНО прошел проверки и остается для последующей обработки' )
+                        self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] SUCCESSFULLY passed the checks and remains for further processing' )
         
         
     
@@ -480,7 +480,7 @@ class file_receiver_ftp(file_receiver):
                 #Проверяем тип файла
                 file_extension = self.get_file_extension(filename)
                 if file_extension not in set( self.extensions_suitable_arch ) and file_extension not in set( self.extensions_suitable ):
-                    self.item.other_messages.append( "Файл на FTP с именем \"" + filename + "\" имеет не подходящий тип" )
+                    self.item.other_messages.append( "File on FTP with file name [" + filename + "] has incorrect type" )
                     continue #К следующему файлу
                 
                 #Файл подходит по типу
@@ -489,30 +489,30 @@ class file_receiver_ftp(file_receiver):
                 if file_extension in set( self.extensions_suitable ):
                     #Проверяем, подходит ли по фильтру имени файла
                     if not self.is_file_suitable_by_substring(filename):
-                        self.item.other_messages.append( "Файл на FTP с именем \"" + filename + "\" не подходит по имени" )
+                        self.item.other_messages.append( "File on FTP with file name [" + filename + "] does not match by name" )
                     else:
                         #Файл подошел - копируем его в папку для последующей обработки
                         try:
                             with open('tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + '/' + filename, "wb") as target_file:
                                 ftp.retrbinary('RETR ' + filename, target_file.write)
-                                self.item.other_messages.append( "СКАЧАН файл с FTP с именем \"" + filename + "\"" )
+                                self.item.other_messages.append( "File downloaded from FTP and has file name [" + filename + "]" )
                         except Exception as err:
-                            self.item.other_messages.append( "Не удалось скачать с FTP файл \"" + filename + "\"" )
+                            self.item.other_messages.append( "Failed to download file from FTP [" + filename + "]" )
                     continue #К следующему файлу
                 else:
                     #Это АРХИВ
                     #Проверяем, подходит ли он по имени
                     if not self.is_file_suitable_by_substring_arch(filename):
-                        self.item.other_messages.append( "Файл на FTP с именем \"" + filename + "\" не подходит по имени" )
+                        self.item.other_messages.append( "File on FTP with file name [" + filename + "] does not match by name" )
                         continue #К следующему файлу
                     else:
                         #Архив подошел по имени, скачиваем
                         try:
                             with open('tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + '/' + filename, "wb") as target_file:
                                 ftp.retrbinary('RETR ' + filename, target_file.write)
-                                self.item.other_messages.append( "СКАЧАН файл (архив) с FTP с именем \"" + filename + "\"" )
+                                self.item.other_messages.append( "DOWNLOADED file (archive) from FTP with the name [" + filename + "]" )
                         except Exception as err:
-                            self.item.other_messages.append( "Не удалось скачать с FTP файл (архив) \"" + filename + "\". Ошибка 1" )
+                            self.item.other_messages.append( "Failed to download file (archive) from FTP [" + filename + "]. Error 1" )
                             continue #К следующему файлу
                         
                         
@@ -521,7 +521,7 @@ class file_receiver_ftp(file_receiver):
                         
                         #Проверяем наличие файла после его скачивания
                         if not Path('tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + '/' + filename).is_file():
-                            self.item.other_messages.append( "Не удалось скачать с FTP файл (архив) \"" + filename + "\". Ошибка 2" )
+                            self.item.other_messages.append( "Failed to download file (archive) from FTP [" + filename + "]. Error 2" )
                             continue #К следующему файлу
                         
                         #Распаковываем архив (распаковка архива, удаление архива после распаковки)
@@ -540,7 +540,7 @@ class file_receiver_ftp(file_receiver):
                             file_extension_unp = self.get_file_extension(file_name_in_arch)
                             if file_extension_unp not in set( self.extensions_suitable ):
                                 #Добавляем сообщение в объект задания
-                                self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" имеет не подходящий тип. Допустимы типы файлов: ' + ', '.join(self.extensions_suitable) )
+                                self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] has wrong type. Accepted file types: ' + ', '.join(self.extensions_suitable) )
                                 #Удаляем неподходящий файл
                                 self.del_file_from_tmp(file_name_in_arch)
                                 #Переходим к следующему РАСПАКОВАННОМУ файлу
@@ -550,7 +550,7 @@ class file_receiver_ftp(file_receiver):
                             #Проверяем, подходит ли по фильтру имени файла
                             if not self.is_file_suitable_by_substring(file_name_in_arch):
                                 #Добавляем сообщение в объект задания
-                                self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" не подходит по подстроке в имени файла: ' + str(self.item.file_name_substring) )
+                                self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] does not match the substring in the file name: ' + str(self.item.file_name_substring) )
                                 #Удаляем неподходящий файл
                                 self.del_file_from_tmp(file_name_in_arch)
                                 #Переходим к следующему РАСПАКОВАННОМУ файлу
@@ -558,7 +558,7 @@ class file_receiver_ftp(file_receiver):
                             
                             
                             #Файл прошел проверки и остается в tmp/launch_id/<price_id> для последующего импорта. Добавляем сообщение в объект задания
-                            self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" УСПЕШНО прошел проверки и остается для последующей обработки' )
+                            self.item.other_messages.append( 'Extracted file "' + str(file_name_in_arch) + '" has SUCCESSFULLY passed the checks and remains for further processing' )
 
 
     # --------------------------------------------------------------
@@ -594,12 +594,12 @@ class file_receiver_email(file_receiver):
         
         #В объекте задания подстрока не задана - заголовок письма можно не проверять - он подходит
         if self.item.email_message_header_substring is None:
-            self.item.other_messages.append('Фильтр по теме письма не задан')
+            self.item.other_messages.append('Filter by email subject is not specified')
             return True
         else:
-            self.item.other_messages.append('ЗАДАН фильтр по теме письма: ' + self.item.email_message_header_substring)
+            self.item.other_messages.append('Filter by email subject is SET: ' + self.item.email_message_header_substring)
             if type(self.item.email_message_header_substring) is str:
-                self.item.other_messages.append('Это строка...')
+                self.item.other_messages.append('This is a string...')
         
         
         #Проверяем вхождение подстроки в заголовке письма
@@ -632,23 +632,23 @@ class file_receiver_email(file_receiver):
         
         #Если новых писем от данного отправителя нет
         if len(messages) == 0:
-            self.append_other_message_to_all_items("Новых писем от " + str(self.email_price_sender) + " нет")
+            self.append_other_message_to_all_items("No new messages from " + str(self.email_price_sender) )
             return
         
         
-        print("Получили письма<br>")
+        #print("Получили письма<br>")
         
         #Цикл по списку писем
         for message in messages:
             
             #В каждый объект задания добавляем сообщение о письме с которым работаем
-            self.append_other_message_to_all_items("Обрабатываем письмо от " + str(message['from_']) + " полученное " + str(message['date']))
+            self.append_other_message_to_all_items("Processing a letter from " + str(message['from_']) + " received " + str(message['date']))
             
             
             #Если вложений в письме не оказалось
             if len(message['attachments']) == 0:
                 #Добавляем в каждое задание, сообщение
-                self.append_other_message_to_all_items("Указанное письмо без вложений")
+                self.append_other_message_to_all_items("The letter without attachments")
                 continue #К следующему письму
             
             
@@ -656,13 +656,13 @@ class file_receiver_email(file_receiver):
             for filename in message['attachments']:
                 
                 #Для каждого объекта указываем имя файла, с которым работаем
-                self.append_other_message_to_all_items("В письме найден файл: " + str(filename) )
+                self.append_other_message_to_all_items("A file was found in the letter: " + str(filename) )
                 
                 #Проверяем тип файла
                 file_extension = self.get_file_extension(filename)
                 if file_extension not in set( self.extensions_suitable_arch ) and file_extension not in set( self.extensions_suitable ):
                     #Добавляем в каждое задание, сообщение
-                    self.append_other_message_to_all_items("Данный файл имеет не подходящий формат - " + file_extension )
+                    self.append_other_message_to_all_items("This file has incorrect format " + file_extension )
                     continue #К следующему файлу письма
                 
                 
@@ -675,7 +675,7 @@ class file_receiver_email(file_receiver):
                     
                     #Проверям, подходит ли данный файл по подстроке в теме письма
                     if not self.is_file_suitable_by_message_header_substring(message['subject']):
-                        self.item.other_messages.append('Файл не подходит по теме письма. Тема письма: [' + str(message['subject'])+ '], фильтр в настройке прайс-листа: [' + str(self.item.email_message_header_substring) + ']' )
+                        self.item.other_messages.append('The file does not match the subject of the letter. Letter subject: [' + str(message['subject'])+ '], filter in price list settings: [' + str(self.item.email_message_header_substring) + ']' )
                         continue #К следующему заданию группы
                     
                     
@@ -683,40 +683,40 @@ class file_receiver_email(file_receiver):
                     if file_extension in set( self.extensions_suitable ):
                         #Проверяем, подходит ли по фильтру имени файла
                         if not self.is_file_suitable_by_substring(filename):
-                            self.item.other_messages.append( "Файл (не архив) с именем \"" + filename + "\" не подходит по имени" )
+                            self.item.other_messages.append( "File (not archive) named [" + filename + "] does not match the name" )
                         else:
                             #Файл подошел - копируем его в папку текущего задания (tmp/launch_id/<price_id>) для последующей обработки
-                            self.item.other_messages.append( "Файл с именем \"" + filename + "\" ПОДХОДИТ. ДАЛЕЕ ЕГО НУЖНО СКАЧАТЬ С ПОЧТЫ" )
+                            self.item.other_messages.append( "File named [" + filename + "] MATCH AND TO BE DOWNLOADED FROM E-MAIL" )
                             
                             #Скачиваем файл в tmp/launch_id/price_id
                             if not self.imap_client.download_file_from_message( message['uid'] , filename , 'tmp/' + str(self.launch_id) + '/' + str(item.price_id) + '/', not item.not_mark_seen_email_messages ):
-                                self.item.other_messages.append("Не удалось скачать файл \"" + filename + "\" из письма")
+                                self.item.other_messages.append("Failed to download file [" + filename + "] from message")
                             else:
-                                self.item.other_messages.append("Файл \"" + filename + "\" успешно скачан из письма")
+                                self.item.other_messages.append("File [" + filename + "] sucessfully downloaded from the message")
                             
                         continue #К следующему заданию группы
                     else:
                         #ЭТО АРХИВ.
                         #Проверяем, подходит ли по наименованию
                         if not self.is_file_suitable_by_substring_arch(filename):
-                            self.item.other_messages.append( "Файл (архив) с именем \"" + filename + "\" не подходит по имени" )
+                            self.item.other_messages.append( "File (archive) named [" + filename + "] does not match the name" )
                             continue #К следующему заданию (объекту) группы
                         
                         #Подходит по имени, скачиваем
                         #Скачиваем файл в tmp/launch_id/price_id
                         if not self.imap_client.download_file_from_message( message['uid'] , filename , 'tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + '/', not self.item.not_mark_seen_email_messages ):
-                            self.item.other_messages.append("Не удалось скачать файл \"" + filename + "\" из письма")
+                            self.item.other_messages.append("Failed to download file [" + filename + "] from message")
                         else:
-                            self.item.other_messages.append("Файл \"" + filename + "\" успешно скачан из письма")
+                            self.item.other_messages.append("File [" + filename + "] sucessfully downloaded from the message")
                         
                         
                         #Архив скачан
-                        self.item.other_messages.append("Пробуем распаковать")
+                        self.item.other_messages.append("Trying to extract")
                         #Распаковка архива
                         
                         #Проверяем наличие файла после его скачивания
                         if not Path('tmp/' + str(self.launch_id) + '/' + str(self.item.price_id) + '/' + filename).is_file():
-                            self.item.other_messages.append( "Не удалось скачать с E-mail файл (архив) \"" + filename + "\"" )
+                            self.item.other_messages.append( "Failed to download file from E-mail (archive) [" + filename + "]" )
                             continue #К следующему заданию (объекту) группы
                         
                         #Распаковываем архив (распаковка архива, удаление архива после распаковки)
@@ -735,7 +735,7 @@ class file_receiver_email(file_receiver):
                             file_extension_unp = self.get_file_extension(file_name_in_arch)
                             if file_extension_unp not in set( self.extensions_suitable ):
                                 #Добавляем сообщение в объект задания
-                                self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" имеет не подходящий тип. Допустимы типы файлов: ' + ', '.join(self.extensions_suitable) )
+                                self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] has wrong type. Accepted file types: ' + ', '.join(self.extensions_suitable) )
                                 #Удаляем неподходящий файл
                                 self.del_file_from_tmp(file_name_in_arch)
                                 #Переходим к следующему РАСПАКОВАННОМУ файлу
@@ -745,7 +745,7 @@ class file_receiver_email(file_receiver):
                             #Проверяем, подходит ли по фильтру имени файла
                             if not self.is_file_suitable_by_substring(file_name_in_arch):
                                 #Добавляем сообщение в объект задания
-                                self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" не подходит по подстроке в имени файла: ' + str(self.item.file_name_substring) )
+                                self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] does not match the substring in the file name: ' + str(self.item.file_name_substring) )
                                 #Удаляем неподходящий файл
                                 self.del_file_from_tmp(file_name_in_arch)
                                 #Переходим к следующему РАСПАКОВАННОМУ файлу
@@ -753,7 +753,7 @@ class file_receiver_email(file_receiver):
                             
                             
                             #Файл прошел проверки и остается в tmp/launch_id/<price_id> для последующего импорта. Добавляем сообщение в объект задания
-                            self.item.other_messages.append( 'Распакованный файл "' + str(file_name_in_arch) + '" УСПЕШНО прошел проверки и остается для последующей обработки' )
+                            self.item.other_messages.append( 'Extracted file [' + str(file_name_in_arch) + '] SUCCESSFULLY passed the checks and remains for further processing' )
         
     # --------------------------------------------------------------
 
