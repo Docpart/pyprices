@@ -13,8 +13,9 @@
 
 
 #Библиотеки для работы с почтой
-from imap_tools import MailBox, A
-
+import imaplib
+import email
+import os
 # --------------------------------------------------------------
 # --------------------------------------------------------------
 
@@ -31,11 +32,21 @@ class docpart_imap:
         self.email_password = email_password
     
     # --------------------------------------------------------------
+    # Метод пометки всех писем как прочитанных
+    def mark_all_messages_as_seen(self):
+        with imaplib.IMAP4_SSL(self.email_server, self.email_port) as M:
+            M.login(self.email_username, self.email_password)
+            M.select('INBOX')
+            typ, data = M.search(None, 'ALL')
+            for num in data[0].split():
+                M.store(num, '+FLAGS', '\\Seen')
     
     #Метод получения статуса подключения к почте
     def get_imap_status(self):
         try:
-            with MailBox(self.email_server, self.email_port).login(self.email_username, self.email_password, 'INBOX') as mailbox:
+            with imaplib.IMAP4_SSL(self.email_server, self.email_port) as M:
+                M.login(self.email_username, self.email_password)
+                M.select('INBOX')
                 return True
         except:
             return False
@@ -44,57 +55,78 @@ class docpart_imap:
     
     #Получения писем от определенного отправителя. Вернет список объектов с описанием писем.
     def get_messages_by_sender(self, sender, need_mark_seen):
-        
-        messages = [] #Список для возврата
-        
-        #Подключаемся к почтовому ящику, папка "Входящие"
-        with MailBox(self.email_server, self.email_port).login(self.email_username, self.email_password, 'INBOX') as mailbox:
-            
-            #При необходимости, можно не помечать письмо, как прочитанное, выставив mark_seen=False. Также можно фетчить письмо по uid и устанавливать флаг просмотра, как нужно (см. примеры)
-            
-            #Получаем письма от sender, непрочитанные (seen=False). Полученные письма помечаем, как прочитанные (mark_seen=True)
-            for msg in mailbox.fetch(A(seen=False, from_=sender), mark_seen=need_mark_seen):
-                
-                #Формируем объект с описанием письма, необходимым для анализа
+        messages = []  # List to return
+
+        with imaplib.IMAP4_SSL(self.email_server, self.email_port) as M:
+            M.login(self.email_username, self.email_password)
+            M.select('INBOX')
+            typ, data = M.search(None, 'UNSEEN', 'FROM', sender)
+            for num in data[0].split():
+                typ, data = M.fetch(num, '(RFC822)')
                 message = {}
-                message['uid'] = msg.uid #ID письма
-                message['date'] = msg.date #Дата
-                message['from_'] = msg.from_ #От кого
-                message['subject'] = msg.subject #Тема письма
-                message['attachments'] = [] #Список вложений
-
-                #Цикл по вложениям. Формируем список имен вложенных файлов
-                for att in msg.attachments:  # list: imap_tools.MailAttachment
-                    message['attachments'].append(att.filename)
+                message['uid'] = num  # ID письма
+                raw_message_data = data[0][1]
+                msg = email.message_from_bytes(raw_message_data)
                 
+                # Decode and handle encoded headers
+                message['date'] = self.decode_header(msg['Date'])
+                message['from_'] = self.decode_header(msg['From'])
+                message['subject'] = self.decode_header(msg['Subject'])
+                
+                message['attachments'] = []  # List of attachments
+
+                # Process attachments
+                for part in msg.walk():
+                    if part.get_filename():
+                        filename = self.decode_header(part.get_filename())
+                        message['attachments'].append(filename)
+
                 messages.append(message)
-        
+
         return messages
+
+    def decode_header(self, header):
+        try:
+            # Try to decode header using UTF-8, and if it fails, replace errors
+            return email.header.decode_header(header)[0][0].decode('utf-8', 'replace')
+        except Exception:
+            return header
         
     # --------------------------------------------------------------
     
-    #Метод скачивания файла с именем filename из сообщения с message_uid в директорию dest_dir. Здесь нет учета случая, при котором в одном письме могут быть файлы с одинаковыми именами. Скачивание произвойдет для первого файла. Если на практике встретится такой случай с файлами с одинаковыми именами в одном письме, то, можно будет доработать - искать файл под нескольким критериям
+    # Метод скачивания файла с именем filename из сообщения с message_uid в директорию dest_dir. Здесь нет учета случая, при котором в одном письме могут быть файлы с одинаковыми именами. Скачивание произвойдет для первого файла. Если на практике встретится такой случай с файлами с одинаковыми именами в одном письме, то, можно будет доработать - искать файл под нескольким критериям
     def download_file_from_message(self, message_uid, filename, dest_dir, need_mark_seen):
-        
-        #Подключаемся к почтовому ящику, папка "Входящие"
-        with MailBox(self.email_server, self.email_port).login(self.email_username, self.email_password, 'INBOX') as mailbox:
-            
-            #Получаем письмо c message_uid
-            for msg in mailbox.fetch(A(uid=message_uid), mark_seen=need_mark_seen):
-                #Цикл по вложениям письма
-                for att in msg.attachments:
-                    #Ищем нужный файл
-                    if att.filename == filename:
-                        with open( dest_dir + att.filename, 'wb') as f:
-                            f.write(att.payload)
-                            return True #Считаем, что файл успешно скачан
-                        return False
-                    continue #К следующему файлу в письме
-                return False
-            return False
+        try:
+            with imaplib.IMAP4_SSL(self.email_server, self.email_port) as M:
+                M.login(self.email_username, self.email_password)
+                M.select('INBOX')
+                typ, data = M.fetch(message_uid, '(RFC822)')
+
+                for response_part in data:
+                    if isinstance(response_part, tuple):
+                        msg = email.message_from_bytes(response_part[1])
+                        for part in msg.walk():
+                            if part.get_content_maintype() == 'multipart':
+                                continue
+                            if part.get('Content-Disposition') is None:
+                                continue
+                            if filename.endswith('.zip' or '.rar' or '.7z' or '.gz' or '.tar'):
+                                if part.get_filename() == filename:
+                                    file_path = os.path.join(dest_dir, filename)
+                                    with open(file_path, 'wb') as f:
+                                        f.write(part.get_payload(decode=True))
+                                    return True
+                            else:
+                                file_path = f"{dest_dir}/{filename}"
+                                with open(file_path, 'wb') as f:
+                                    f.write(part.get_payload(decode=True))
+                                return True
+        except Exception as e:
+            print(f"Error downloading file: {e}")
         return False
+
+    
     
     # --------------------------------------------------------------
 
-# --------------------------------------------------------------
 # --------------------------------------------------------------
